@@ -1,5 +1,5 @@
 [![npm](https://img.shields.io/npm/l/@hkpuits/react-native-beacons-manager.svg)](https://github.com/benlui/react-native-beacons-manager)
-[![npm](https://img.shields.io/npm/v/@hkpuits/react-native-beacons-manager.svg)](https://www.npmjs.com/package/@hkpuits/react-native-region-monitor)
+[![npm](https://img.shields.io/npm/v/@hkpuits/react-native-beacons-manager.svg)](https://www.npmjs.com/package/@hkpuits/react-native-beacons-manager)
 
 # @hkpuits/react-native-beacons-manager
 
