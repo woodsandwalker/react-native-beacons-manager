@@ -2,7 +2,6 @@
 
 ## iOS background mode
 
-
 In the Xcode project:
 
 **Project settings:**
@@ -61,4 +60,5 @@ So do the tasks (that does not long last since iOS won't let it run more than fe
 
 ## Android background mode
 
-**TO ADD**
+Use headless task to support beaocn monitoring at backgorund and after device reboot
+  - need to add a file `BeaconMonitorTask.js`, default at the same level of index.js of your project, for handling the headless task (default transition task name: `beacons-monitor-transition`)

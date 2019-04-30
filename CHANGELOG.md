@@ -1,4 +1,11 @@
 
+## 1.2.0
+  Based on 1.0.7, updated the following
+- changes made in https://www.npmjs.com/package/@nois/react-native-beacons-manager
+- Android: add headless task to support beaocn monitoring at backgorund and after device reboot
+  - need to add a file BeaconMonitorTask.js, default at the same level of index.js of your project, for handling the headless task (default transition task name: beacons-monitor-transition)
+- iOS: add startObserving and queuedRegionEvents to queue events before listener is ready
+
 ## 1.1.0 (COMING SOON)
 - iOS: add `allowsBackgroundLocationUpdates(allow: boolean)` to ensure monitoring even if app is killed or in background
 - PR #45 thank you to @stoneman1

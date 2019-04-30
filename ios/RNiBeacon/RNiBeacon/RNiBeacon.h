@@ -13,4 +13,7 @@
 
 @interface RNiBeacon : RCTEventEmitter <RCTBridgeModule>
 
+@property (nonatomic, assign) BOOL isQueueingEvents;
+@property (nonatomic, strong) NSMutableArray* queuedRegionEvents;
+
 @end

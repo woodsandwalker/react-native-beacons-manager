@@ -10,13 +10,13 @@
 
 #import <React/RCTBridge.h>
 #import <React/RCTConvert.h>
-#import <React/RCTEventDispatcher.h>
 #import "ESSBeaconScanner.h"
 #import "ESSEddystone.h"
 
 #import "RNiBeacon.h"
 
 static NSString *const kEddystoneRegionID = @"EDDY_STONE_REGION_ID";
+NSString* INVBeaconManagerDidChangeBeaconEvent = @"INVBeaconManagerDidChangeBeaconEvent";
 
 @interface RNiBeacon() <CLLocationManagerDelegate, ESSBeaconScannerDelegate>
 
@@ -28,9 +28,19 @@ static NSString *const kEddystoneRegionID = @"EDDY_STONE_REGION_ID";
 
 @implementation RNiBeacon
 
+@synthesize isQueueingEvents;
+@synthesize queuedRegionEvents;
+
 RCT_EXPORT_MODULE()
 
 #pragma mark Initialization
+
+- (NSDictionary *)constantsToExport
+{
+    return @{
+             @"beaconManagerDidChangeBeacon": INVBeaconManagerDidChangeBeaconEvent,
+             };
+}
 
 - (instancetype)init
 {
@@ -38,14 +48,53 @@ RCT_EXPORT_MODULE()
     self.locationManager = [[CLLocationManager alloc] init];
 
     self.locationManager.delegate = self;
+
     self.locationManager.pausesLocationUpdatesAutomatically = NO;
+
+    // Options to allow app killed state running
+    self.locationManager.desiredAccuracy = kCLLocationAccuracyThreeKilometers;
+    self.locationManager.allowsBackgroundLocationUpdates = true;
+
     self.dropEmptyRanges = NO;
-      
+
     self.eddyStoneScanner = [[ESSBeaconScanner alloc] init];
     self.eddyStoneScanner.delegate = self;
+      
+      isQueueingEvents = YES;
+      queuedRegionEvents = [[NSMutableArray alloc] init];
   }
 
   return self;
+}
+
+- (void)_sendQueuedRegionEvents {
+    NSLog(@"[Beacon][Native] _sendQueuedRegionEvents");
+    for (NSDictionary *event in queuedRegionEvents) {
+        NSLog(@"[Beacon][Native] _sendQueuedRegionEvents, sendEventWithName for some events...");
+        
+        if ([[event objectForKey:@"didEnter"] boolValue]) {
+            NSLog(@"[Beacon][Native] _sendQueuedRegionEvents regionDidEnter");
+            [self sendEventWithName:@"regionDidEnter" body:event];
+        }
+        else if ([[event objectForKey:@"didExit"] boolValue]) {
+            NSLog(@"[Beacon][Native] _sendQueuedRegionEvents regionDidExit");
+            [self sendEventWithName:@"regionDidExit" body:event];
+        }
+    }
+    
+    [queuedRegionEvents removeAllObjects];
+}
+
+- (void)startObserving {
+    NSLog(@"[Beacon][Native] startObserving... isQueueingEvents: %d", isQueueingEvents);
+    if (isQueueingEvents) {
+        isQueueingEvents = NO;
+        
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0), dispatch_get_main_queue(), ^{
+            NSLog(@"[Beacon][Native] startObserving... dispatch_after called");
+            [self _sendQueuedRegionEvents];
+        });
+    }
 }
 
 - (NSArray<NSString *> *)supportedEvents
@@ -55,7 +104,8 @@ RCT_EXPORT_MODULE()
              @"beaconsDidRange",
              @"regionDidEnter",
              @"regionDidExit",
-             @"didDetermineState"
+             @"didDetermineState",
+             INVBeaconManagerDidChangeBeaconEvent
              ];
 }
 
@@ -138,19 +188,23 @@ RCT_EXPORT_MODULE()
   }
 }
 
--(NSDictionary *) convertBeaconRegionToDict: (CLBeaconRegion *) region
+-(NSDictionary *) convertBeaconRegionToDict: (CLBeaconRegion *) region didEnter:(BOOL)didEnter didExit:(BOOL)didExit
 {
   if (region.minor == nil) {
     if (region.major == nil) {
       return @{
                @"identifier": region.identifier,
                @"uuid": [region.proximityUUID UUIDString],
+               @"didEnter": @(didEnter),
+               @"didExit": @(didExit),
                };
     } else {
       return @{
                @"identifier": region.identifier,
                @"uuid": [region.proximityUUID UUIDString],
-               @"major": region.major
+               @"major": region.major,
+               @"didEnter": @(didEnter),
+               @"didExit": @(didExit),
                };
     }
   } else {
@@ -158,7 +212,9 @@ RCT_EXPORT_MODULE()
              @"identifier": region.identifier,
              @"uuid": [region.proximityUUID UUIDString],
              @"major": region.major,
-             @"minor": region.minor
+             @"minor": region.minor,
+             @"didEnter": @(didEnter),
+             @"didExit": @(didExit),
              };
   }
 }
@@ -202,7 +258,7 @@ RCT_EXPORT_METHOD(getMonitoredRegions:(RCTResponseSenderBlock)callback)
   NSMutableArray *regionArray = [[NSMutableArray alloc] init];
 
   for (CLBeaconRegion *region in self.locationManager.monitoredRegions) {
-    [regionArray addObject: [self convertBeaconRegionToDict: region]];
+    [regionArray addObject: [self convertBeaconRegionToDict: region didEnter:false didExit:false]];
   }
 
   callback(@[regionArray]);
@@ -215,6 +271,7 @@ RCT_EXPORT_METHOD(startMonitoringForRegion:(NSDictionary *) dict)
 
 RCT_EXPORT_METHOD(startRangingBeaconsInRegion:(NSDictionary *) dict)
 {
+  [self.locationManager startMonitoringSignificantLocationChanges];
   if ([dict[@"identifier"] isEqualToString:kEddystoneRegionID]) {
       [_eddyStoneScanner startScanning];
   } else {
@@ -229,6 +286,7 @@ RCT_EXPORT_METHOD(stopMonitoringForRegion:(NSDictionary *) dict)
 
 RCT_EXPORT_METHOD(stopRangingBeaconsInRegion:(NSDictionary *) dict)
 {
+  [self.locationManager startMonitoringSignificantLocationChanges];
   if ([dict[@"identifier"] isEqualToString:kEddystoneRegionID]) {
     [self.eddyStoneScanner stopScanning];
   } else {
@@ -301,12 +359,7 @@ RCT_EXPORT_METHOD(shouldDropEmptyRanges:(BOOL)drop)
 
 - (void) locationManager:(CLLocationManager *)manager didDetermineState:(CLRegionState)state forRegion:(CLRegion *)region
 {
-    NSDictionary *event = @{
-                          @"state":   [self stringForState:state],
-                          @"identifier":  region.identifier,
-                          };
-
-    [self sendEventWithName:@"didDetermineState" body:event];
+    NSLog(@"[Beacon][Native] didDetermineState, region: %@, state: %@", region.identifier, [self stringForState:state]);
 }
 
 -(void) locationManager:(CLLocationManager *)manager didRangeBeacons:
@@ -338,21 +391,49 @@ RCT_EXPORT_METHOD(shouldDropEmptyRanges:(BOOL)drop)
                           @"beacons": beaconArray
                           };
 
+    NSLog(@"[Beacon][Native] beaconsDidRange %lu", [beaconArray count]);
+
     [self sendEventWithName:@"beaconsDidRange" body:event];
 }
 
 -(void)locationManager:(CLLocationManager *)manager
         didEnterRegion:(CLBeaconRegion *)region {
-  NSDictionary *event = [self convertBeaconRegionToDict: region];
+  NSDictionary *event = [self convertBeaconRegionToDict: region didEnter:true didExit:false];
 
-  [self sendEventWithName:@"regionDidEnter" body:event];
+  NSLog(@"[Beacon][Native] regionDidEnter");
+  //[self sendEventWithName:@"regionDidEnter" body:event];
+  //[self.bridge.eventDispatcher sendDeviceEventWithName:@"regionDidEnter" body:event];
+    
+    if (isQueueingEvents) {
+        NSLog(@"[Beacon][Native] regionDidEnter queue event");
+        [queuedRegionEvents addObject:event];
+        
+        // TODO: Check the count of the queuedRegionEvents as it shouldn't grow too big.
+    }
+    else {
+        NSLog(@"[Beacon][Native] regionDidEnter send event");
+        [self sendEventWithName:@"regionDidEnter" body:event];
+    }
 }
 
 -(void)locationManager:(CLLocationManager *)manager
          didExitRegion:(CLBeaconRegion *)region {
-  NSDictionary *event = [self convertBeaconRegionToDict: region];
+  NSDictionary *event = [self convertBeaconRegionToDict: region didEnter:false didExit:true];
 
-  [self sendEventWithName:@"regionDidExit" body:event];
+  NSLog(@"[Beacon][Native] regionDidExit");
+  //[self sendEventWithName:@"regionDidExit" body:event];
+  //[self.bridge.eventDispatcher sendDeviceEventWithName:@"regionDidExit" body:event];
+    
+    if (isQueueingEvents) {
+        NSLog(@"[Beacon][Native] regionDidExit queue event");
+        [queuedRegionEvents addObject:event];
+        
+        // TODO: Check the count of the queuedRegionEvents as it shouldn't grow too big.
+    }
+    else {
+        NSLog(@"[Beacon][Native] regionDidExit send event");
+        [self sendEventWithName:@"regionDidExit" body:event];
+    }
 }
 
 + (BOOL)requiresMainQueueSetup
@@ -366,7 +447,7 @@ RCT_EXPORT_METHOD(shouldDropEmptyRanges:(BOOL)drop)
 
 - (void)notifyAboutBeaconChanges:(NSArray *)beacons {
     NSMutableArray *beaconArray = [[NSMutableArray alloc] init];
-    
+
     for (id key in beacons) {
         ESSBeaconInfo *beacon = key;
         NSDictionary *info = [self getEddyStoneInfo:beacon];
@@ -400,12 +481,12 @@ RCT_EXPORT_METHOD(shouldDropEmptyRanges:(BOOL)drop)
     if ([rssi floatValue] >= 0){
         return [NSNumber numberWithInt:-1];
     }
-    
+
     float ratio = [rssi floatValue] / ([txPower floatValue] - 41);
     if (ratio < 1.0) {
         return [NSNumber numberWithFloat:pow(ratio, 10)];
     }
-    
+
     float distance = (0.89976) * pow(ratio, 7.7095) + 0.111;
     return [NSNumber numberWithFloat:distance];
 }
@@ -416,13 +497,13 @@ RCT_EXPORT_METHOD(shouldDropEmptyRanges:(BOOL)drop)
     if (!dataBuffer) {
         return [NSString string];
     }
-    
+
     NSMutableString *hexString  = [NSMutableString stringWithCapacity:(data.length * 2)];
     [hexString appendString:@"0x"];
     for (int i = 0; i < EDDYSTONE_UUID_LENGTH; ++i) {
         [hexString appendString:[NSString stringWithFormat:@"%02lx", (unsigned long)dataBuffer[i]]];
     }
-    
+
     return [NSString stringWithString:hexString];
 }
 
