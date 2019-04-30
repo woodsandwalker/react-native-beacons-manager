@@ -1,13 +1,11 @@
-[![npm](https://img.shields.io/npm/l/react-native-beacons-manager.svg)](https://github.com/MacKentoch/react-native-beacons-manager)
-[![npm](https://img.shields.io/npm/v/react-native-beacons-manager.svg)](https://www.npmjs.com/package/react-native-beacons-manager)
-[![Gitter](https://img.shields.io/gitter/room/nwjs/nw.js.svg)](https://gitter.im/react-native-beacons-manager/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link)
+[![npm](https://img.shields.io/npm/l/@hkpuits/react-native-beacons-manager.svg)](https://github.com/benlui/react-native-beacons-manager)
+[![npm](https://img.shields.io/npm/v/@hkpuits/react-native-beacons-manager.svg)](https://www.npmjs.com/package/@hkpuits/react-native-region-monitor)
 
-# react-native-beacons-manager
+# @hkpuits/react-native-beacons-manager
 
 ![logo](./images/RN-iBeacon.png)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FMacKentoch%2Freact-native-beacons-manager.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FMacKentoch%2Freact-native-beacons-manager?ref=badge_shield)
 
-`react-native-beacons-manager`: add beacon technology in your React Native application for both iOS and Android.
+`@hkpuits/react-native-beacons-manager`: add beacon technology in your React Native application for both iOS and Android.
 
 This repository is born to keep alive and up to date these 3 original awesome:
 - [ibeacon for android](https://github.com/mmazzarolo/react-native-beacons-android)
@@ -20,7 +18,7 @@ If you want to know more about just have a look at [Erwan Datin's medium article
 If you want to test with a `simulated beacon`, there is a useful free application on `android`: [beaconsimulator](https://play.google.com/store/apps/details?id=net.alea.beaconsimulator)
 
 ## Change Log
-See [here](https://github.com/benlui/react-native-beacons-manager/blob/master/CHANGELOG.md).
+See [here](./CHANGELOG.md).
 
 
 ## Install (iOS and Android)
@@ -40,16 +38,16 @@ See [here](https://github.com/benlui/react-native-beacons-manager/blob/master/CH
 ### 1. get modules
 *via npm:*
 ```javascript:
-npm install react-native-beacons-manager
+npm install @hkpuits/react-native-beacons-manager
 ```
 *or via yarn:*
 ```javascript:
-yarn add react-native-beacons-manager
+yarn add @hkpuits/react-native-beacons-manager
 ```
 ### 2. link to your application
 
 ```javascript
-react-native link react-native-beacons-manager
+react-native link @hkpuits/react-native-beacons-manager
 ```
 ### 3.a configuration specific to iOS
 
@@ -74,9 +72,11 @@ Just don't forget to activate
 - Bluetooth service (*all android version*)
 - Location service (*android < 7: beacon detection won't work on android 6 if location service is off*)
 
+**use background mode** check [this documentation](./BACKGROUND_MODES.md)
+
 ## 4. usage
 
->NOTE: If simple examples below don't help you as much as you wanted, [check detailed documentation depending on use-case + code samples here](https://github.com/MacKentoch/react-native-beacons-manager/tree/master/examples/samples#detailed-documentation--sample-code)
+>NOTE: If simple examples below don't help you as much as you wanted, [check detailed documentation depending on use-case + code samples here](https://github.com/benlui/react-native-beacons-manager/tree/master/examples/samples#detailed-documentation--sample-code)
 
 ### 4.a iOS
 
@@ -212,15 +212,8 @@ DeviceEventEmitter.addListener('beaconsDidRange', (data) => {
   - [ ] add support to Eddystone
 
 
-## Donate
 
-Do you use & like react-native-beacons-manager but you don’t find a way to show some love?
-If yes, please consider donating to support this project. Otherwise, no worries, regardless of whether there is support or not, I will keep maintaining this project. Still, if you buy me a cup of coffee I would be more than happy though 😄
-
-[![Support via PayPal](./images/paypal/Paypal-button.png)](https://www.paypal.me/ErwanDatin/)
-
-
-## license
+## License
 
 The MIT License (MIT)
 
@@ -243,6 +236,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FMacKentoch%2Freact-native-beacons-manager.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FMacKentoch%2Freact-native-beacons-manager?ref=badge_large)
