@@ -31,34 +31,79 @@ Beacons.requestAlwaysAuthorization();
 Finally when killed or sleeping and a beacon is found your whole app wont be loaded.
 
 So do the tasks (that does not long last since iOS won't let it run more than few seconds):
-```javascript
+```js
+//...
+
 // monitoring:
- DeviceEventEmitter.addListener(
+this.regionDidEnterEvent = Beacons.BeaconsEventEmitter.addListener(
    'regionDidEnter',
    (data) => {
     // good place for background tasks
-     console.log('monitoring - regionDidEnter data: ', data);
-
-     const time = moment().format(TIME_FORMAT);
-     this.setState({ regionEnterDatasource: this.state.rangingDataSource.cloneWithRows([{ identifier:data.identifier, uuid:data.uuid, minor:data.minor, major:data.major, time }]) });
+    console.log('monitoring - regionDidEnter data: ', data);
+    // do something
    }
  );
 
- DeviceEventEmitter.addListener(
+this.regionDidExitEvent = Beacons.BeaconsEventEmitter.addListener(
    'regionDidExit',
-   ({ identifier, uuid, minor, major }) => {
-     // good place for background tasks
-     console.log('monitoring - regionDidExit data: ', { identifier, uuid, minor, major });
-
-     const time = moment().format(TIME_FORMAT);
-    this.setState({ regionExitDatasource: this.state.rangingDataSource.cloneWithRows([{ identifier, uuid, minor, major, time }]) });
-   }
+   (data) => {
+      // good place for background tasks
+      console.log('region did exit');
+      // do something
+    }
  );
 
+//...
 ```
 
 
 ## Android background mode
 
 Use headless task to support beaocn monitoring at backgorund and after device reboot
-  - need to add a file `BeaconMonitorTask.js`, default at the same level of index.js of your project, for handling the headless task (default transition task name: `beacons-monitor-transition`)
+  - Add a file '{ProjectRoot}/BeaconMonitorTask.js' for region monitoring in backgorund, default at the same level of index.js of your project, for handling the headless task (default transition task name: `beacons-monitor-transition`)
+```js
+//...
+
+const region = {
+  identifier: 'Estimotes',
+  uuid: 'B9407F30-F5F8-466E-AFF9-25556B57FE6D'
+};
+
+module.exports = async (event) => {
+  // add codes to monitor the beacons
+  // ...e.g.
+  Beacons.startMonitoringForRegion(region)
+      .then(() => console.log(`Beacon ${region.identifier} monitoring started succesfully`))
+      .catch(error => console.log(`Beacon ${region.identifier}  monitoring not started, error: ${error}`));
+
+  if (Platform.OS === 'ios') {
+    Beacons.startUpdatingLocation();
+  }
+
+  // add codes to handle events returned by the monitoring beacons
+  // ... e.g.
+  if (Platform.OS === 'android') {
+    Beacons.BeaconsEventEmitter.removeAllListeners();
+  }
+
+  this.regionDidEnterEvent = Beacons.BeaconsEventEmitter.addListener(
+    'regionDidEnter',
+    (data) => {
+      // good place for background tasks
+      console.log('region did enter');
+      // do something
+    },
+  );
+
+  this.regionDidExitEvent = Beacons.BeaconsEventEmitter.addListener(
+    'regionDidExit',
+    (data) => {
+      // good place for background tasks
+      console.log('region did exit');
+      // do something
+    },
+  );
+};
+
+//...
+```

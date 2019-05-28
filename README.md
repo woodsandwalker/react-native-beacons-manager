@@ -34,22 +34,19 @@ See [here](./CHANGELOG.md).
 > - **Android** `minimum version`
 >   - 21 (*alias LOLLIPOP*)
 
-
-### 1. get modules
+## **Getting started**
 *via npm:*
-```javascript:
-npm install @hkpuits/react-native-beacons-manager
+```
+$ npm install @hkpuits/react-native-beacons-manager --save
+$ react-native link @hkpuits/react-native-beacons-manager
 ```
 *or via yarn:*
-```javascript:
-yarn add @hkpuits/react-native-beacons-manager
 ```
-### 2. link to your application
+$ yarn add @hkpuits/react-native-beacons-manager
+$ react-native link @hkpuits/react-native-beacons-manager
+```
 
-```javascript
-react-native link @hkpuits/react-native-beacons-manager
-```
-### 3.a configuration specific to iOS
+## **Notes for iOS implementation**
 
 If you plan to:
 - `only range beacons` no configuration needed (`react-native init` already did the job for you), or just check that you already have `WhenInUse` authorization declared in your `info.plist`:
@@ -64,7 +61,7 @@ If you plan to:
 
 - **use background mode** check [this documentation](./BACKGROUND_MODES.md)
 
-### 3.b configuration specific to Android
+## **Notes for Android implementation**
 
 Nothing (lucky Android :smile:).
 
@@ -74,17 +71,14 @@ Just don't forget to activate
 
 **use background mode** check [this documentation](./BACKGROUND_MODES.md)
 
-## 4. usage
 
->NOTE: If simple examples below don't help you as much as you wanted, [check detailed documentation depending on use-case + code samples here](https://github.com/benlui/react-native-beacons-manager/tree/master/examples/samples#detailed-documentation--sample-code)
-
-### 4.a iOS
+## **Usage (iOS)**
 
 #### Simple example
 
-```javascript
+```js
 import { DeviceEventEmitter } from 'react-native'
-import Beacons from 'react-native-beacons-manager'
+import Beacons from '@hkpuits/react-native-beacons-manager'
 
 // Define a region which can be identifier + uuid,
 // identifier + uuid + major or identifier + uuid + major + minor
@@ -122,7 +116,7 @@ const subscription = DeviceEventEmitter.addListener(
 );
 ```
 
-#### API
+## API Documentation (iOS)
 
 | Method                            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 |:----------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -147,13 +141,13 @@ const subscription = DeviceEventEmitter.addListener(
 | **authorizationDidChange**       | When the user permissions change, for example the user allows to always use beacons, this event will be called. The same applies when the user revokes the permission to use beacons. The payload is a string which can either be: `"authorizedAlways"`, `"authorizedWhenInUse"`, `"denied"`, `"notDetermined"` or `"restricted"`               |
 
 
-### 4.b Android
+## **Usage (Android)**
 
 #### Simple example
 
-```javascript
+```js
 import { DeviceEventEmitter } from 'react-native'
-import Beacons from 'react-native-beacons-manager'
+import Beacons from '@hkpuits/react-native-beacons-manager'
 
 // Tells the library to detect iBeacons
 Beacons.detectIBeacons()
@@ -172,7 +166,7 @@ DeviceEventEmitter.addListener('beaconsDidRange', (data) => {
 })
 ```
 
-#### API
+## API Documentation (Android)
 
 | Method                                                                                            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 |:--------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
