@@ -125,7 +125,7 @@ RCT_EXPORT_MODULE()
                                                                          minor:mi
                                                                     identifier:identifier];
 
-  NSLog(@"createBeaconRegion with: identifier - uuid - major - minor");
+  NSLog(@"[Beacon][Native] createBeaconRegion with: identifier - uuid - major - minor");
   beaconRegion.notifyOnEntry = YES;
   beaconRegion.notifyOnExit = YES;
   beaconRegion.notifyEntryStateOnDisplay = YES;
@@ -145,7 +145,7 @@ RCT_EXPORT_MODULE()
                                                                          major:mj
                                                                     identifier:identifier];
 
-  NSLog(@"createBeaconRegion with: identifier - uuid - major");
+  NSLog(@"[Beacon][Native] createBeaconRegion with: identifier - uuid - major");
   beaconRegion.notifyOnEntry = YES;
   beaconRegion.notifyOnExit = YES;
   beaconRegion.notifyEntryStateOnDisplay = YES;
@@ -161,7 +161,7 @@ RCT_EXPORT_MODULE()
   CLBeaconRegion *beaconRegion = [[CLBeaconRegion alloc] initWithProximityUUID:beaconUUID
                                                                     identifier:identifier];
 
-  NSLog(@"createBeaconRegion with: identifier - uuid");
+  NSLog(@"[Beacon][Native] createBeaconRegion with: identifier - uuid");
   beaconRegion.notifyOnEntry = YES;
   beaconRegion.notifyOnExit = YES;
   beaconRegion.notifyEntryStateOnDisplay = YES;
@@ -256,8 +256,11 @@ RCT_EXPORT_METHOD(getAuthorizationStatus:(RCTResponseSenderBlock)callback)
 RCT_EXPORT_METHOD(getMonitoredRegions:(RCTResponseSenderBlock)callback)
 {
   NSMutableArray *regionArray = [[NSMutableArray alloc] init];
-
-  for (CLBeaconRegion *region in self.locationManager.monitoredRegions) {
+  NSPredicate *predicate = [NSPredicate predicateWithFormat:
+                            @"self isKindOfClass: %@",
+                            [CLBeaconRegion class]];
+  NSSet *regions = [self.locationManager.monitoredRegions filteredSetUsingPredicate:predicate];
+  for (CLBeaconRegion *region in regions) {
     [regionArray addObject: [self convertBeaconRegionToDict: region didEnter:false didExit:false]];
   }
 
@@ -337,15 +340,23 @@ RCT_EXPORT_METHOD(shouldDropEmptyRanges:(BOOL)drop)
 
 -(void)locationManager:(CLLocationManager *)manager rangingBeaconsDidFailForRegion:(CLBeaconRegion *)region withError:(NSError *)error
 {
-  NSLog(@"Failed ranging region: %@", error);
+  if (![region isKindOfClass:[CLBeaconRegion class]]) {
+    NSLog(@"[Beacon][Native] rangingBeaconsDidFailForRegion: NOT CLBeaconRegion");
+    return;
+  }
+  NSLog(@"[Beacon][Native] Failed ranging region: %@", error);
 }
 
 -(void)locationManager:(CLLocationManager *)manager monitoringDidFailForRegion:(CLRegion *)region withError:(NSError *)error {
-  NSLog(@"Failed monitoring region: %@", error);
+  if (![region isKindOfClass:[CLBeaconRegion class]]) {
+    NSLog(@"[Beacon][Native] monitoringDidFailForRegion: NOT CLBeaconRegion");
+    return;
+  }
+  NSLog(@"[Beacon][Native] Failed monitoring region: %@", error);
 }
 
 -(void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error {
-  NSLog(@"Location manager failed: %@", error);
+  NSLog(@"[Beacon][Native] Location manager failed: %@", error);
 }
 
 -(NSString *)stringForState:(CLRegionState)state {
@@ -359,12 +370,20 @@ RCT_EXPORT_METHOD(shouldDropEmptyRanges:(BOOL)drop)
 
 - (void) locationManager:(CLLocationManager *)manager didDetermineState:(CLRegionState)state forRegion:(CLRegion *)region
 {
-    NSLog(@"[Beacon][Native] didDetermineState, region: %@, state: %@", region.identifier, [self stringForState:state]);
+  if (![region isKindOfClass:[CLBeaconRegion class]]) {
+    NSLog(@"[Beacon][Native] didDetermineState: NOT CLBeaconRegion");
+    return;
+  }
+  NSLog(@"[Beacon][Native] didDetermineState, region: %@, state: %@", region.identifier, [self stringForState:state]);
 }
 
--(void) locationManager:(CLLocationManager *)manager didRangeBeacons:
-(NSArray *)beacons inRegion:(CLBeaconRegion *)region
+-(void) locationManager:(CLLocationManager *)manager didRangeBeacons:(NSArray *)beacons inRegion:(CLBeaconRegion *)region
 {
+  if (![region isKindOfClass:[CLBeaconRegion class]]) {
+    NSLog(@"[Beacon][Native] didRangeBeacons: NOT CLBeaconRegion");
+    return;
+  }
+  
   if (self.dropEmptyRanges && beacons.count == 0) {
     return;
   }
@@ -398,42 +417,52 @@ RCT_EXPORT_METHOD(shouldDropEmptyRanges:(BOOL)drop)
 
 -(void)locationManager:(CLLocationManager *)manager
         didEnterRegion:(CLBeaconRegion *)region {
+  if (![region isKindOfClass:[CLBeaconRegion class]]) {
+    NSLog(@"[Beacon][Native] didEnterRegion: NOT CLBeaconRegion");
+    return;
+  }
+  
   NSDictionary *event = [self convertBeaconRegionToDict: region didEnter:true didExit:false];
-
-  NSLog(@"[Beacon][Native] regionDidEnter");
+  
+  NSLog(@"[Beacon][Native] didEnterRegion");
   //[self sendEventWithName:@"regionDidEnter" body:event];
   //[self.bridge.eventDispatcher sendDeviceEventWithName:@"regionDidEnter" body:event];
+  
+  if (isQueueingEvents) {
+    NSLog(@"[Beacon][Native] didEnterRegion queue event");
+    [queuedRegionEvents addObject:event];
     
-    if (isQueueingEvents) {
-        NSLog(@"[Beacon][Native] regionDidEnter queue event");
-        [queuedRegionEvents addObject:event];
-        
-        // TODO: Check the count of the queuedRegionEvents as it shouldn't grow too big.
-    }
-    else {
-        NSLog(@"[Beacon][Native] regionDidEnter send event");
-        [self sendEventWithName:@"regionDidEnter" body:event];
-    }
+    // TODO: Check the count of the queuedRegionEvents as it shouldn't grow too big.
+  }
+  else {
+    NSLog(@"[Beacon][Native] didEnterRegion send event");
+    [self sendEventWithName:@"regionDidEnter" body:event];
+  }
 }
 
 -(void)locationManager:(CLLocationManager *)manager
          didExitRegion:(CLBeaconRegion *)region {
+  if (![region isKindOfClass:[CLBeaconRegion class]]) {
+    NSLog(@"[Beacon][Native] didExitRegion: NOT CLBeaconRegion");
+    return;
+  }
+  
   NSDictionary *event = [self convertBeaconRegionToDict: region didEnter:false didExit:true];
-
-  NSLog(@"[Beacon][Native] regionDidExit");
+  
+  NSLog(@"[Beacon][Native] didExitRegion");
   //[self sendEventWithName:@"regionDidExit" body:event];
   //[self.bridge.eventDispatcher sendDeviceEventWithName:@"regionDidExit" body:event];
+  
+  if (isQueueingEvents) {
+    NSLog(@"[Beacon][Native] didExitRegion queue event");
+    [queuedRegionEvents addObject:event];
     
-    if (isQueueingEvents) {
-        NSLog(@"[Beacon][Native] regionDidExit queue event");
-        [queuedRegionEvents addObject:event];
-        
-        // TODO: Check the count of the queuedRegionEvents as it shouldn't grow too big.
-    }
-    else {
-        NSLog(@"[Beacon][Native] regionDidExit send event");
-        [self sendEventWithName:@"regionDidExit" body:event];
-    }
+    // TODO: Check the count of the queuedRegionEvents as it shouldn't grow too big.
+  }
+  else {
+    NSLog(@"[Beacon][Native] didExitRegion send event");
+    [self sendEventWithName:@"regionDidExit" body:event];
+  }
 }
 
 + (BOOL)requiresMainQueueSetup

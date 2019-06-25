@@ -68,35 +68,65 @@ public class BeaconsAndroidModule extends ReactContextBaseJavaModule implements 
         mBeaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24")); // IBeacon
 //        mBeaconManager.setDebug(false);
 
-        // Fix: may not be called after consumers are already bound beacon
-        if (!mBeaconManager.isAnyConsumerBound()) {
-            Notification.Builder builder = new Notification.Builder(mApplicationContext);
-            builder.setSmallIcon(mApplicationContext.getResources().getIdentifier("ic_notification", "mipmap", mApplicationContext.getPackageName()));
-            builder.setContentTitle("Scanning for Beacons");
-            Class intentClass = getMainActivityClass();
-            Intent intent = new Intent(mApplicationContext, intentClass);
-            PendingIntent pendingIntent = PendingIntent.getActivity(mApplicationContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-            builder.setContentIntent(pendingIntent);
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                NotificationChannel channel = new NotificationChannel("My Notification Channel ID",
-                        "My Notification Name", NotificationManager.IMPORTANCE_DEFAULT);
-                channel.setDescription("My Notification Channel Description");
-                NotificationManager notificationManager = (NotificationManager) mApplicationContext.getSystemService(Context.NOTIFICATION_SERVICE);
-                notificationManager.createNotificationChannel(channel);
-                builder.setChannelId(channel.getId());
+    }
+
+    @ReactMethod
+    public void init(Callback resolve, Callback reject) {
+        try {
+            Log.d(LOG_TAG, "BeaconsAndroidModule - init");
+            // Fix: may not be called after consumers are already bound beacon
+            if (mBeaconManager != null && !mBeaconManager.isAnyConsumerBound()) {
+                Notification.Builder builder = new Notification.Builder(mApplicationContext);
+                builder.setSmallIcon(mApplicationContext.getResources().getIdentifier("ic_notification", "mipmap", mApplicationContext.getPackageName()));
+                builder.setContentTitle("Scanning for Beacons");
+                Class intentClass = getMainActivityClass();
+                Intent intent = new Intent(mApplicationContext, intentClass);
+                PendingIntent pendingIntent = PendingIntent.getActivity(mApplicationContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+                builder.setContentIntent(pendingIntent);
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    NotificationChannel channel = new NotificationChannel("My Notification Channel ID",
+                            "My Notification Name", NotificationManager.IMPORTANCE_DEFAULT);
+                    channel.setDescription("My Notification Channel Description");
+                    NotificationManager notificationManager = (NotificationManager) mApplicationContext.getSystemService(Context.NOTIFICATION_SERVICE);
+                    notificationManager.createNotificationChannel(channel);
+                    builder.setChannelId(channel.getId());
+                }
+
+                mBeaconManager.enableForegroundServiceScanning(builder.build(), 456);
+                // For the above foreground scanning service to be useful, you need to disable
+                // JobScheduler-based scans (used on Android 8+) and set a fast background scan
+                // cycle that would otherwise be disallowed by the operating system.
+                //
+                mBeaconManager.setEnableScheduledScanJobs(false);
+                mBeaconManager.setBackgroundBetweenScanPeriod(0);
+                mBeaconManager.setBackgroundScanPeriod(1100);
+
+                bindManager();
             }
 
-            mBeaconManager.enableForegroundServiceScanning(builder.build(), 456);
-            // For the above foreground scanning service to be useful, you need to disable
-            // JobScheduler-based scans (used on Android 8+) and set a fast background scan
-            // cycle that would otherwise be disallowed by the operating system.
-            //
-            mBeaconManager.setEnableScheduledScanJobs(false);
-            mBeaconManager.setBackgroundBetweenScanPeriod(0);
-            mBeaconManager.setBackgroundScanPeriod(1100);
+            resolve.invoke();
+        } catch (Exception e) {
+            reject.invoke(e.getMessage());
+        }
+    }
 
-            bindManager();
+    @ReactMethod
+    public void stop(Callback resolve, Callback reject) {
+        try {
+            Log.d(LOG_TAG, "BeaconsAndroidModule - stop");
+
+            NotificationManager notificationManager = (NotificationManager) mApplicationContext.getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.cancel(456);
+
+            if (mBeaconManager != null) {
+                unbindManager();
+            }
+
+            resolve.invoke();
+        } catch (Exception e) {
+            reject.invoke(e.getMessage());
         }
     }
 

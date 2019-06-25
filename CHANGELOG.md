@@ -1,4 +1,9 @@
 
+## 1.2.3
+- For iOS, return didDetermine, didEnter, didExit, etc event only for Beacon (i.e. CLBeaconRegion class)
+- For Android, adds API (i) init() and stop() for init / stop notificaiton channel on demand
+
+
 ## 1.2.1
   Based on 1.0.7, updated the following
 - changes made in https://www.npmjs.com/package/@nois/react-native-beacons-manager

@@ -150,19 +150,20 @@ import { DeviceEventEmitter } from 'react-native'
 import Beacons from '@hkpuits/react-native-beacons-manager'
 
 // Tells the library to detect iBeacons
-Beacons.detectIBeacons()
+Beacons.init(); // to set the NotificationChannel, and enable background scanning
+Beacons.detectIBeacons();
 
 // Start detecting all iBeacons in the nearby
 try {
   await Beacons.startRangingBeaconsInRegion('REGION1')
-  console.log(`Beacons ranging started succesfully!`)
+  console.log(`Beacons ranging started succesfully!`);
 } catch (err) {
-  console.log(`Beacons ranging not started, error: ${error}`)
+  console.log(`Beacons ranging not started, error: ${error}`);
 }
 
 // Print a log of the detected iBeacons (1 per second)
 DeviceEventEmitter.addListener('beaconsDidRange', (data) => {
-  console.log('Found beacons!', data.beacons)
+  console.log('Found beacons!', data.beacons);
 })
 ```
 
@@ -171,6 +172,8 @@ DeviceEventEmitter.addListener('beaconsDidRange', (data) => {
 | Method                                                                                            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 |:--------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **detectCustomBeaconLayout(parser: string): void**                                                | Allows the detection of a custom beacon layout. For example `detectCustomBeaconLayout('m:0-3=4c000215,i:4-19,i:20-21,i:22-23,p:24-24')` allows you to detect iBeacons beacons.                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **init(): void**                                                                        | To set the NotificationChannel for beacon event(s), and enable background scanning                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **stop(): void**                                                                        | To stop the NotificationChannel for beacon event(s) if needed                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **detectIBeacons(): void**                                                                        | Allows the detection of iBeacons. It's just like calling detectCustomBeaconLayout with the iBeacons layout.                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | **detectEstimotes(): void**                                                                       | Allows the detection of Estimote beacons. It's just like calling `detectCustomBeaconLayout` with the Estimote layout.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | **checkTransmissionSupported(): promise**                                                         | Checks if the device can use the Bluetooth to detect the beacons.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
