@@ -80,6 +80,10 @@ RCT_EXPORT_MODULE()
             NSLog(@"[Beacon][Native] _sendQueuedRegionEvents regionDidExit");
             [self sendEventWithName:@"regionDidExit" body:event];
         }
+        else if ([[event objectForKey:@"didChangeStatus"] boolValue]) {
+            NSString *statusName = [event objectForKey:@"status"];
+            [self sendEventWithName:@"authorizationStatusDidChange" body:statusName];
+        }
     }
     
     [queuedRegionEvents removeAllObjects];
@@ -219,6 +223,14 @@ RCT_EXPORT_MODULE()
   }
 }
 
+-(NSDictionary *) convertAuthorizationStatusToDict: (NSString *) status didChangeStatus:(BOOL)didChangeStatus
+{
+    return @{
+         @"status": status,
+         @"didChangeStatus": @(didChangeStatus),
+         };
+}
+
 -(NSString *)stringForProximity:(CLProximity)proximity {
   switch (proximity) {
     case CLProximityUnknown:    return @"unknown";
@@ -335,7 +347,16 @@ RCT_EXPORT_METHOD(shouldDropEmptyRanges:(BOOL)drop)
 -(void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status
 {
     NSString *statusName = [self nameForAuthorizationStatus:status];
-    [self sendEventWithName:@"authorizationStatusDidChange" body:statusName];
+    //[self sendEventWithName:@"didChangeAuthorizationStatus" body:statusName];
+    if (isQueueingEvents) {
+      NSLog(@"[Beacon][Native] didChangeAuthorizationStatus queue event");
+      NSDictionary *status = [self convertAuthorizationStatusToDict: statusName didChangeStatus:true];
+      [queuedRegionEvents addObject:status];
+    }
+    else {
+      NSLog(@"[Beacon][Native] didChangeAuthorizationStatus send event");
+      [self sendEventWithName:@"authorizationStatusDidChange" body:statusName];
+    }
 }
 
 -(void)locationManager:(CLLocationManager *)manager rangingBeaconsDidFailForRegion:(CLBeaconRegion *)region withError:(NSError *)error
