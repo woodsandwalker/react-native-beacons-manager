@@ -1,7 +1,12 @@
 
+## 1.2.5
+For Android, 
+- fix for Android 8.0+ using startForeground and startForegroundService
+- update background mode documentation. Wait for beaconServiceConnected event before startMonitoring beacons
+
 ## 1.2.4
 - For iOS, adds logic to queue authorizationStatusDidChange events 
-- 
+  
 ## 1.2.3
 - For iOS, return didDetermine, didEnter, didExit, etc event only for Beacon (i.e. CLBeaconRegion class)
 - For Android, adds API (i) init() and stop() for init / stop notificaiton channel on demand

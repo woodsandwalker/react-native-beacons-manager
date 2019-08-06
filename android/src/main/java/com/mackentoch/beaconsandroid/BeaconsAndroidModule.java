@@ -7,8 +7,10 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.bluetooth.le.ScanFilter;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.res.Resources;
 import android.os.Build;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
@@ -66,9 +68,17 @@ public class BeaconsAndroidModule extends ReactContextBaseJavaModule implements 
         // need to bind at instantiation so that service loads (to test more)
         //mBeaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout("m:0-3=4c000215,i:4-19,i:20-21,i:22-23,p:24-24")); // AltBeacon
         mBeaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24")); // IBeacon
-//        mBeaconManager.setDebug(false);
+//      mBeaconManager.setDebug(false);
 
-
+        // Fix beacon empty when screen off
+        /*
+        ScanFilter.Builder builder = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder = new ScanFilter.Builder();
+            builder.setManufacturerData(0x004c, new byte[]{});
+            ScanFilter filter = builder.build();
+        }
+        */
     }
 
     @ReactMethod
@@ -77,18 +87,25 @@ public class BeaconsAndroidModule extends ReactContextBaseJavaModule implements 
             Log.d(LOG_TAG, "BeaconsAndroidModule - init");
             // Fix: may not be called after consumers are already bound beacon
             if (mBeaconManager != null && !mBeaconManager.isAnyConsumerBound()) {
+
+                Resources res = mApplicationContext.getResources();
+                String packageName = mApplicationContext.getPackageName();
+                String CHANNEL_ID = "rn-push-notification-channel-id";
+                String CHANNEL_NAME = res.getString(res.getIdentifier("notification_channel_name", "string", packageName));
+                String CHANNEL_DESCRIPTION = res.getString(res.getIdentifier("notification_channel_description", "string", packageName));
+
                 Notification.Builder builder = new Notification.Builder(mApplicationContext);
                 builder.setSmallIcon(mApplicationContext.getResources().getIdentifier("ic_notification", "mipmap", mApplicationContext.getPackageName()));
-                builder.setContentTitle("Scanning for Beacons");
+                //builder.setContentTitle("Scanning for Beacons");
+                builder.setContentTitle(CHANNEL_DESCRIPTION);
                 Class intentClass = getMainActivityClass();
                 Intent intent = new Intent(mApplicationContext, intentClass);
                 PendingIntent pendingIntent = PendingIntent.getActivity(mApplicationContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
                 builder.setContentIntent(pendingIntent);
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    NotificationChannel channel = new NotificationChannel("My Notification Channel ID",
-                            "My Notification Name", NotificationManager.IMPORTANCE_DEFAULT);
-                    channel.setDescription("My Notification Channel Description");
+                    NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW);
+                    channel.setDescription(CHANNEL_DESCRIPTION);
                     NotificationManager notificationManager = (NotificationManager) mApplicationContext.getSystemService(Context.NOTIFICATION_SERVICE);
                     notificationManager.createNotificationChannel(channel);
                     builder.setChannelId(channel.getId());

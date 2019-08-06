@@ -70,11 +70,6 @@ const region = {
 };
 
 module.exports = async (event) => {
-  // add codes to monitor the beacons
-  // ...e.g.
-  Beacons.startMonitoringForRegion(region)
-      .then(() => console.log(`Beacon ${region.identifier} monitoring started succesfully`))
-      .catch(error => console.log(`Beacon ${region.identifier}  monitoring not started, error: ${error}`));
 
   if (Platform.OS === 'ios') {
     Beacons.startUpdatingLocation();
@@ -84,6 +79,27 @@ module.exports = async (event) => {
   // ... e.g.
   if (Platform.OS === 'android') {
     Beacons.BeaconsEventEmitter.removeAllListeners();
+  }
+
+  if (Platform.OS === 'android') {
+    // for android, startMonitoring after beaconService is connected
+    // Beacons.BeaconsEventEmitter.removeAllListeners('beaconServiceConnected');
+    Beacons.BeaconsEventEmitter.addListener(
+      'beaconServiceConnected',
+      async () => {
+        // add codes to monitor the beacons
+        // ...e.g.
+        Beacons.startMonitoringForRegion(region)
+            .then(() => console.log(`Beacon ${region.identifier} monitoring started succesfully`))
+            .catch(error => console.log(`Beacon ${region.identifier}  monitoring not started, error: ${error}`));
+      },
+    );
+  } else {
+    // add codes to monitor the beacons
+    // ...e.g.
+    Beacons.startMonitoringForRegion(region)
+        .then(() => console.log(`Beacon ${region.identifier} monitoring started succesfully`))
+        .catch(error => console.log(`Beacon ${region.identifier}  monitoring not started, error: ${error}`));
   }
 
   this.regionDidEnterEvent = Beacons.BeaconsEventEmitter.addListener(
