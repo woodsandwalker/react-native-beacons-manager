@@ -38,11 +38,13 @@ See [here](./CHANGELOG.md).
 *via npm:*
 ```
 $ npm install @hkpuits/react-native-beacons-manager --save
-$ react-native link @hkpuits/react-native-beacons-manager
 ```
 *or via yarn:*
 ```
 $ yarn add @hkpuits/react-native-beacons-manager
+```
+(OPTIONAL) If autolinking is not available for your React Native project
+```
 $ react-native link @hkpuits/react-native-beacons-manager
 ```
 

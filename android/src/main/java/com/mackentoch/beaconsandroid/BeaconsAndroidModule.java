@@ -13,8 +13,8 @@ import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.os.Build;
 import android.provider.Settings;
-import android.support.annotation.Nullable;
-import android.support.v4.app.NotificationCompat;
+import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
 import android.util.Log;
 
 import com.facebook.react.bridge.Callback;
