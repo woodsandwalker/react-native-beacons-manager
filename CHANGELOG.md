@@ -1,3 +1,6 @@
+## 1.2.7
+- Update altbeacon library as 2.19
+
 ## 1.2.6
 - Support Autolinking for React Native 0.60+
 - AndroidX support
